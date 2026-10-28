@@ -141,7 +141,12 @@ def search_jobs_rss() -> list:
     """
     Free, no-API-key job source via Google News RSS. Returns the same dict
     shape as the Google search results so the two can be merged seamlessly.
+
+    Each feed contributes only its top-N most recent items (JOB_RSS_PER_FEED)
+    so one high-volume feed can't flood the batch, and the total stays small
+    enough for the LLM filter to process cheaply.
     """
+    per_feed = getattr(config, "JOB_RSS_PER_FEED", 15)
     combined = {}
     for url in config.JOB_RSS_FEEDS:
         try:
@@ -149,7 +154,7 @@ def search_jobs_rss() -> list:
         except Exception as e:
             print(f"  [warn] job RSS parse failed for {url}: {e}")
             continue
-        for entry in parsed.entries:
+        for entry in parsed.entries[:per_feed]:
             link = getattr(entry, "link", "").strip()
             title = getattr(entry, "title", "").strip()
             summary = getattr(entry, "summary", "") or getattr(entry, "description", "")
@@ -160,7 +165,8 @@ def search_jobs_rss() -> list:
                     "snippet": summary.strip()[:300],
                     "source_query": "rss",
                 }
-    print(f"[jobs] RSS found {len(combined)} result(s)")
+    print(f"[jobs] RSS found {len(combined)} result(s) "
+          f"(<= {per_feed}/feed from {len(config.JOB_RSS_FEEDS)} feeds)")
     return list(combined.values())
 
 

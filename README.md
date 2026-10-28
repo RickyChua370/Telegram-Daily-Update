@@ -21,7 +21,7 @@ GitHub Actions (daily, 8 AM MYT)
         │
         ▼
      main.py
-        ├── jobs_search.py   → Google Programmable Search (≤90/day) + free RSS
+        ├── jobs_search.py   → free Google-News RSS job feeds (+ optional Google API)
         ├── news_fetch.py    → The Edge + global AI via RSS
         ├── llm_filter.py    → Gemini (free): filter jobs + layman summaries
         ├── seen_store.py    → remembers past items so you only get NEW ones
@@ -134,6 +134,21 @@ Everything you'll want to tweak is in **`config.py`**:
 - `MAX_JOBS_IN_DIGEST`, `MAX_NEWS_ITEMS_PER_SECTION` — how much to show.
 
 ---
+
+## Where the jobs come from
+
+The main job source is **free Google-News RSS feeds** (no API key, no quota),
+including `site:`-scoped feeds that pull **actual listings** from job boards like
+gradconnection, Hiredly and Ricebowl, plus general Malaysian graduate-hiring news.
+The Gemini filter then keeps only genuine, currently-open graduate programmes and
+drops the news noise.
+
+The Google **Programmable Search** path (`GOOGLE_SEARCH_*` secrets) is still wired
+in and merges on top *if* it's available — but it's **optional**. Note that Google
+is winding down the free Custom Search JSON API, and some new Google Cloud accounts
+hit a `403 "project does not have access"` even with the API enabled (a known
+Google-side provisioning restriction). If that happens to you, just leave those two
+secrets unset — the free RSS feeds cover the job section on their own.
 
 ## Honest limitations
 

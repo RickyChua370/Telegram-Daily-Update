@@ -101,10 +101,24 @@ MAX_JOBS_IN_DIGEST = 15
 # complement the Programmable Search results. Results from both sources are
 # merged and deduped before the LLM filter runs.
 JOB_RSS_FEEDS = [
-    "https://news.google.com/rss/search?q=when:7d%20graduate%20programme%20Malaysia&hl=en-MY&gl=MY&ceid=MY:en",
-    "https://news.google.com/rss/search?q=when:7d%20graduate%20trainee%20Malaysia&hl=en-MY&gl=MY&ceid=MY:en",
-    "https://news.google.com/rss/search?q=when:7d%20management%20trainee%20Malaysia%20graduate&hl=en-MY&gl=MY&ceid=MY:en",
+    # --- General Malaysian graduate-programme news/announcements (last 2 weeks) ---
+    "https://news.google.com/rss/search?q=when:14d%20graduate%20programme%20Malaysia&hl=en-MY&gl=MY&ceid=MY:en",
+    "https://news.google.com/rss/search?q=when:14d%20graduate%20trainee%20Malaysia&hl=en-MY&gl=MY&ceid=MY:en",
+    "https://news.google.com/rss/search?q=when:14d%20management%20trainee%20Malaysia&hl=en-MY&gl=MY&ceid=MY:en",
+    "https://news.google.com/rss/search?q=when:14d%20fresh%20graduate%20hiring%20Malaysia&hl=en-MY&gl=MY&ceid=MY:en",
+
+    # --- Direct listings from job boards via Google News site: scoping ---
+    # These return ACTUAL graduate job postings (title + link), no API key needed.
+    # This is what replaces the blocked Google Custom Search for us.
+    "https://news.google.com/rss/search?q=site:gradconnection.com%20Malaysia%20graduate&hl=en-MY&gl=MY&ceid=MY:en",
+    "https://news.google.com/rss/search?q=site:hiredly.com%20graduate%20trainee&hl=en-MY&gl=MY&ceid=MY:en",
+    "https://news.google.com/rss/search?q=site:ricebowl.my%20graduate&hl=en-MY&gl=MY&ceid=MY:en",
 ]
+
+# Max items taken from EACH job RSS feed (keeps the batch focused and the LLM
+# filtering cheap). The direct job-board feeds are high-volume, so this trims
+# them to the most recent listings.
+JOB_RSS_PER_FEED = 15
 
 # ---------------------------------------------------------------------------
 # LLM (Google Gemini free tier)
