@@ -59,10 +59,13 @@ def _run_single_search(query: str, api_key: str, cx: str) -> list:
         "cx": cx,
         "q": query,
         "num": config.RESULTS_PER_SEARCH,
-        # Bias toward recent results and Malaysia.
+        # Bias toward Malaysia.
         "gl": "my",
-        "dateRestrict": "m3",  # last 3 months
     }
+    # Optional recency filter (many grad pages are older but still open, so this
+    # is off by default — set JOB_DATE_RESTRICT in config to re-enable).
+    if getattr(config, "JOB_DATE_RESTRICT", None):
+        params["dateRestrict"] = config.JOB_DATE_RESTRICT
     try:
         resp = requests.get(GOOGLE_CSE_ENDPOINT, params=params, timeout=30)
     except requests.RequestException as e:
@@ -77,6 +80,10 @@ def _run_single_search(query: str, api_key: str, cx: str) -> list:
         return []
 
     data = resp.json()
+    # Diagnostic: Google reports total matches even when it returns few items.
+    total = data.get("searchInformation", {}).get("totalResults", "0")
+    n_items = len(data.get("items", []))
+    print(f"  [search] {query!r} -> total={total}, returned={n_items}")
     results = []
     for item in data.get("items", []):
         results.append({

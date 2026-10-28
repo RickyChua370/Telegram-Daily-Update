@@ -22,6 +22,11 @@ MAX_GOOGLE_SEARCHES_PER_DAY = 90
 # Number of results to request per search (Google allows up to 10 per call).
 RESULTS_PER_SEARCH = 10
 
+# Optional recency filter for Google job searches (e.g. "m3" = last 3 months,
+# "y1" = last year). Leave as None to search without a date restriction —
+# recommended, since many graduate-programme pages are older but still open.
+JOB_DATE_RESTRICT = None
+
 # ---------------------------------------------------------------------------
 # JOBS: target big MNC graduate programmes in Malaysia
 # ---------------------------------------------------------------------------
@@ -46,16 +51,16 @@ TARGET_COMPANIES = [
 # configured in the engine's control panel (see README). Because the engine
 # already limits the domains, these queries do NOT use site: operators.
 JOB_SEARCH_QUERIES = [
-    '"graduate programme" Malaysia {year}',
-    '"graduate trainee" Malaysia {year}',
-    '"management trainee programme" Malaysia {year}',
-    '"graduate development programme" Malaysia {year}',
-    '"young talent programme" Malaysia {year}',
-    'fresh graduate programme Kuala Lumpur {year}',
-    'MNC graduate programme Malaysia {year}',
-    'multinational graduate trainee Malaysia {year}',
-    '"graduate scheme" Malaysia {year}',
-    'graduate programme Malaysia {year}',
+    'graduate programme Malaysia',
+    'graduate trainee Malaysia',
+    'management trainee Malaysia',
+    'graduate development programme Malaysia',
+    'young talent programme Malaysia',
+    'fresh graduate programme Kuala Lumpur',
+    'graduate scheme Malaysia',
+    'graduate programme {year}',
+    'management trainee programme {year}',
+    'graduate trainee {year} Malaysia',
 ]
 
 # Company-specific queries are generated automatically from TARGET_COMPANIES
@@ -107,7 +112,7 @@ JOB_RSS_FEEDS = [
 # Model used for filtering jobs and summarising news. The free tier covers
 # this volume comfortably. If the key is missing, the bot gracefully falls
 # back to sending raw (unsummarised, lightly-deduped) results.
-GEMINI_MODEL = "gemini-2.0-flash"
+GEMINI_MODEL = "gemini-3.8-flash"
 
 # ---------------------------------------------------------------------------
 # Timezone label (purely cosmetic, shown in the digest header)
