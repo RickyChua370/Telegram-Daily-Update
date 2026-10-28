@@ -75,6 +75,13 @@ def _run_single_search(query: str, api_key: str, cx: str) -> list:
     if resp.status_code == 429:
         print("  [info] Google search daily free quota reached; stopping early.")
         raise StopIteration  # signal to caller to stop making more calls
+    if resp.status_code == 403:
+        # Config problem (API not enabled / key-project mismatch). No point
+        # hammering the same error 20x — surface it clearly and stop.
+        print("  [error] Google search 403 — Custom Search JSON API is not "
+              "enabled for this key's project, or the key/engine is misconfigured. "
+              "Skipping Google job search (RSS jobs still used).")
+        raise StopIteration
     if not resp.ok:
         print(f"  [warn] search returned {resp.status_code} for {query!r}: {resp.text[:200]}")
         return []

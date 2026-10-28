@@ -39,36 +39,56 @@ def _get_client():
     )
 
 
+def _model_candidates() -> list:
+    """Preferred model first, then any configured fallbacks (deduped)."""
+    candidates = [config.GEMINI_MODEL]
+    for m in getattr(config, "GEMINI_MODEL_FALLBACKS", []):
+        if m not in candidates:
+            candidates.append(m)
+    return candidates
+
+
 def _generate(client, prompt: str) -> str:
     """
-    Call Gemini and return the response text, retrying transient failures
-    (503/overloaded/timeouts) with simple backoff. Raises on the final failure
-    so callers can fall back to raw output.
+    Call Gemini and return the response text.
+
+    - If a model is unavailable (404 / not found / no access), try the next
+      model in the fallback chain.
+    - Retry transient failures (503/overloaded/timeout/429) with backoff.
+    - Raises on final failure so callers can fall back to raw output.
     """
     last_err = None
-    for attempt in range(1, _MAX_RETRIES + 1):
-        try:
-            resp = client.models.generate_content(
-                model=config.GEMINI_MODEL,
-                contents=prompt,
-            )
-            return resp.text or ""
-        except Exception as e:  # noqa: BLE001 - we inspect the message below
-            last_err = e
-            msg = str(e).lower()
-            transient = any(
-                tok in msg
-                for tok in ("503", "unavailable", "high demand",
-                            "overloaded", "timeout", "deadline", "429")
-            )
-            if transient and attempt < _MAX_RETRIES:
-                wait = _RETRY_BACKOFF_SECONDS * attempt
-                print(f"  [llm] transient error (attempt {attempt}/{_MAX_RETRIES}), "
-                      f"retrying in {wait}s...")
-                time.sleep(wait)
-                continue
-            raise
-    raise last_err  # pragma: no cover
+    for model in _model_candidates():
+        for attempt in range(1, _MAX_RETRIES + 1):
+            try:
+                resp = client.models.generate_content(model=model, contents=prompt)
+                if model != config.GEMINI_MODEL:
+                    print(f"  [llm] using fallback model: {model}")
+                return resp.text or ""
+            except Exception as e:  # noqa: BLE001 - we inspect the message below
+                last_err = e
+                msg = str(e).lower()
+                unavailable = any(
+                    tok in msg
+                    for tok in ("404", "not found", "not available",
+                                "does not have access", "unsupported")
+                )
+                transient = any(
+                    tok in msg
+                    for tok in ("503", "unavailable", "high demand",
+                                "overloaded", "timeout", "deadline", "429")
+                )
+                if unavailable:
+                    print(f"  [llm] model {model} unavailable; trying next...")
+                    break  # move to next model in the chain
+                if transient and attempt < _MAX_RETRIES:
+                    wait = _RETRY_BACKOFF_SECONDS * attempt
+                    print(f"  [llm] transient error on {model} "
+                          f"(attempt {attempt}/{_MAX_RETRIES}), retrying in {wait}s...")
+                    time.sleep(wait)
+                    continue
+                break  # non-transient, non-404 -> try next model (or give up)
+    raise last_err
 
 
 def _extract_json(text: str):

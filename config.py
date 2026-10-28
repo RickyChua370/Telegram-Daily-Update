@@ -112,7 +112,20 @@ JOB_RSS_FEEDS = [
 # Model used for filtering jobs and summarising news. The free tier covers
 # this volume comfortably. If the key is missing, the bot gracefully falls
 # back to sending raw (unsummarised, lightly-deduped) results.
-GEMINI_MODEL = "gemini-3.8-flash"
+# Flash-Lite is the model available on the Gemini free tier (Google narrowed
+# the free tier in Oct 2026 so the full Flash/Pro models need a paid plan).
+# It's also faster, which avoids the 504 timeouts seen with the full Flash model.
+#
+# The bot tries these in order and uses the first one your key can access, so
+# it keeps working even as Google rotates model availability. Put your
+# preferred model first.
+GEMINI_MODEL = "gemini-3.5-flash-lite"
+GEMINI_MODEL_FALLBACKS = [
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "gemini-2.5-flash-lite",
+    "gemini-2.0-flash-lite",
+]
 
 # ---------------------------------------------------------------------------
 # Timezone label (purely cosmetic, shown in the digest header)
