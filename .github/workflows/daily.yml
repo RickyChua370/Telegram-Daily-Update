@@ -2,8 +2,9 @@ name: Daily Digest
 
 # Sends a daily Telegram digest (jobs + MY business/finance + global AI news).
 # Trigger manually via the "Run workflow" button, or wait for the daily schedule.
+# NOTE: "on" is quoted so YAML doesn't parse it as the boolean true.
 
-on:
+"on":
   schedule:
     # GitHub Actions cron is in UTC. 00:00 UTC = 08:00 Malaysia Time (MYT, UTC+8).
     - cron: "0 0 * * *"
