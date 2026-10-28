@@ -1,0 +1,58 @@
+name: Daily Digest
+
+on:
+  schedule:
+    # GitHub Actions cron is in UTC. 00:00 UTC = 08:00 Malaysia Time (MYT, UTC+8).
+    - cron: "0 0 * * *"
+  # Lets you trigger a run manually from the Actions tab to test.
+  workflow_dispatch:
+
+# Avoid overlapping runs.
+concurrency:
+  group: daily-digest
+  cancel-in-progress: false
+
+jobs:
+  send-digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Restore the "seen" memory from the previous run so we only send NEW items.
+      # The key rotates daily; restore-keys falls back to the most recent cache.
+      - name: Restore seen-memory
+        uses: actions/cache/restore@v4
+        with:
+          path: seen.json
+          key: seen-store-${{ github.run_id }}
+          restore-keys: |
+            seen-store-
+
+      - name: Run daily digest
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GOOGLE_SEARCH_API_KEY: ${{ secrets.GOOGLE_SEARCH_API_KEY }}
+          GOOGLE_SEARCH_ENGINE_ID: ${{ secrets.GOOGLE_SEARCH_ENGINE_ID }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python main.py
+
+      # Save the updated memory for tomorrow's run.
+      - name: Save seen-memory
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: seen.json
+          key: seen-store-${{ github.run_id }}

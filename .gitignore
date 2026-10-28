@@ -1,0 +1,15 @@
+# Secrets - never commit these
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Local state (the "seen" memory when running locally)
+seen.json
+
+# OS
+.DS_Store
