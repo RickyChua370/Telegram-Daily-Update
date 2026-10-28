@@ -21,7 +21,7 @@ GitHub Actions (daily, 8 AM MYT)
         │
         ▼
      main.py
-        ├── jobs_search.py   → Google Programmable Search (max 90 queries/day)
+        ├── jobs_search.py   → Google Programmable Search (≤90/day) + free RSS
         ├── news_fetch.py    → The Edge + global AI via RSS
         ├── llm_filter.py    → Gemini (free): filter jobs + layman summaries
         ├── seen_store.py    → remembers past items so you only get NEW ones
@@ -50,11 +50,33 @@ You need **4 free credentials**. Here's each, step by step.
 
 > Free tier = **100 queries/day**. Google does **not** bill past that — it just
 > stops. This project is additionally capped at **90/day** in code.
+>
+> ⚠️ **Note (2026):** Google deprecated the "Search the entire web" option. New
+> free engines are limited to **≤50 specific domains**. That's fine for us — we
+> point the engine at the job boards where Malaysian MNC graduate programmes
+> actually appear, and add a free Google-News RSS layer (`JOB_RSS_FEEDS`, no API
+> key) to keep coverage broad.
 
-1. Create a search engine at **https://programmablesearchengine.google.com/**
-   → "Add" → set it to **search the entire web** → create.
-   Copy the **Search engine ID** (the `cx` value) → this is `GOOGLE_SEARCH_ENGINE_ID`.
-2. Get an API key at **https://developers.google.com/custom-search/v1/introduction**
+1. Create a search engine at **https://programmablesearchengine.google.com/controlpanel/create**
+   → give it a name → to get past the create screen you must add one site
+   (e.g. `my.jobstreet.com`) → complete CAPTCHA → **Create**.
+2. Open the engine's **Control Panel → "Sites to search"** and add these
+   job-board domains (well within the 50-domain free limit):
+   ```
+   my.jobstreet.com
+   malaysia.indeed.com
+   my.gradconnection.com
+   glassdoor.com
+   www.linkedin.com
+   jobstreet.com
+   www.ricebowl.my
+   www.wobb.my
+   graduan.com
+   www.hiredly.com
+   ```
+   (Add the careers domains of specific MNCs too if you like — up to 50 total.)
+3. Copy the **Search engine ID** (the `cx` value) → this is `GOOGLE_SEARCH_ENGINE_ID`.
+4. Get an API key at **https://developers.google.com/custom-search/v1/introduction**
    → click **"Get a Key"** → create/select a project → copy the key →
    this is `GOOGLE_SEARCH_API_KEY`.
    *(You do NOT need to enable billing. If prompted, skip it — 100/day stays free.)*

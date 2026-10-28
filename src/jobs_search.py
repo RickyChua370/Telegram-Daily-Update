@@ -14,6 +14,7 @@ Malaysian graduate programmes afterwards.
 import os
 import datetime
 import requests
+import feedparser
 
 import config
 
@@ -117,6 +118,46 @@ def search_jobs() -> list:
             if r["link"]:
                 combined[r["link"]] = r  # dedupe by URL
 
-    print(f"[jobs] used {budget.used} searches, "
-          f"found {len(combined)} unique raw results")
+    print(f"[jobs] Google search used {budget.used} searches, "
+          f"found {len(combined)} unique result(s)")
     return list(combined.values())
+
+
+def search_jobs_rss() -> list:
+    """
+    Free, no-API-key job source via Google News RSS. Returns the same dict
+    shape as the Google search results so the two can be merged seamlessly.
+    """
+    combined = {}
+    for url in config.JOB_RSS_FEEDS:
+        try:
+            parsed = feedparser.parse(url)
+        except Exception as e:
+            print(f"  [warn] job RSS parse failed for {url}: {e}")
+            continue
+        for entry in parsed.entries:
+            link = getattr(entry, "link", "").strip()
+            title = getattr(entry, "title", "").strip()
+            summary = getattr(entry, "summary", "") or getattr(entry, "description", "")
+            if link and title:
+                combined[link] = {
+                    "title": title,
+                    "link": link,
+                    "snippet": summary.strip()[:300],
+                    "source_query": "rss",
+                }
+    print(f"[jobs] RSS found {len(combined)} result(s)")
+    return list(combined.values())
+
+
+def gather_jobs() -> list:
+    """
+    Combine Programmable Search results with the free RSS safety net,
+    deduped by URL. This is what main.py calls.
+    """
+    merged = {}
+    for r in search_jobs() + search_jobs_rss():
+        if r.get("link"):
+            merged[r["link"]] = r
+    print(f"[jobs] combined total: {len(merged)} unique raw result(s)")
+    return list(merged.values())

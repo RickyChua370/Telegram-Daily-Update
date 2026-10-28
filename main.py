@@ -35,7 +35,7 @@ def _news_key(item: dict) -> str:
 
 def build_jobs_section() -> tuple:
     """Return (section_text, new_jobs_list)."""
-    raw = jobs_search.search_jobs()
+    raw = jobs_search.gather_jobs()
     cleaned = llm_filter.filter_jobs(raw)
     new_jobs = seen_store.filter_new(cleaned, _job_key)
 

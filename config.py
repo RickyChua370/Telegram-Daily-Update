@@ -41,18 +41,21 @@ TARGET_COMPANIES = [
 # Google search query templates. Keep these broad enough to catch
 # "all companies, any industry" but focused on Malaysia + graduate hiring.
 # {year} is filled in automatically with the current year.
+# NOTE: Google deprecated "Search the entire web" for Programmable Search
+# (Jan 2026). Our engine is therefore restricted to the job-board domains
+# configured in the engine's control panel (see README). Because the engine
+# already limits the domains, these queries do NOT use site: operators.
 JOB_SEARCH_QUERIES = [
-    '"graduate programme" Malaysia {year} apply',
+    '"graduate programme" Malaysia {year}',
     '"graduate trainee" Malaysia {year}',
     '"management trainee programme" Malaysia {year}',
     '"graduate development programme" Malaysia {year}',
     '"young talent programme" Malaysia {year}',
-    'fresh graduate programme "Kuala Lumpur" {year}',
-    'MNC graduate programme Malaysia {year} hiring',
+    'fresh graduate programme Kuala Lumpur {year}',
+    'MNC graduate programme Malaysia {year}',
     'multinational graduate trainee Malaysia {year}',
-    '"graduate scheme" Malaysia {year} applications open',
-    'graduate programme Malaysia {year} site:*.com.my',
-    'graduate trainee Malaysia {year} site:linkedin.com/jobs',
+    '"graduate scheme" Malaysia {year}',
+    'graduate programme Malaysia {year}',
 ]
 
 # Company-specific queries are generated automatically from TARGET_COMPANIES
@@ -84,6 +87,19 @@ MAX_NEWS_ITEMS_PER_SECTION = 5
 
 # Max job listings to show in the digest (after filtering + dedupe).
 MAX_JOBS_IN_DIGEST = 15
+
+# ---------------------------------------------------------------------------
+# JOBS: free RSS safety net (no API key, no quota)
+# ---------------------------------------------------------------------------
+# Because Google's free search is now domain-restricted, we add a free RSS
+# layer via Google News to keep coverage broad. These need NO API key and
+# complement the Programmable Search results. Results from both sources are
+# merged and deduped before the LLM filter runs.
+JOB_RSS_FEEDS = [
+    "https://news.google.com/rss/search?q=when:7d%20graduate%20programme%20Malaysia&hl=en-MY&gl=MY&ceid=MY:en",
+    "https://news.google.com/rss/search?q=when:7d%20graduate%20trainee%20Malaysia&hl=en-MY&gl=MY&ceid=MY:en",
+    "https://news.google.com/rss/search?q=when:7d%20management%20trainee%20Malaysia%20graduate&hl=en-MY&gl=MY&ceid=MY:en",
+]
 
 # ---------------------------------------------------------------------------
 # LLM (Google Gemini free tier)
