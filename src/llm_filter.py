@@ -10,14 +10,22 @@ non-AI path (lightly-cleaned raw data) so the bot still works.
 
 import json
 import os
+import time
 
 import config
 
 try:
     from google import genai
+    from google.genai import types as genai_types
     _HAS_GENAI = True
 except ImportError:
     _HAS_GENAI = False
+
+# Per-request timeout (ms) so a stalled call can't hang the whole run.
+_REQUEST_TIMEOUT_MS = 60_000
+# Retry transient errors (e.g. 503 "high demand") a few times with backoff.
+_MAX_RETRIES = 3
+_RETRY_BACKOFF_SECONDS = 5
 
 
 def _get_client():
@@ -25,16 +33,42 @@ def _get_client():
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key or not _HAS_GENAI:
         return None
-    return genai.Client(api_key=api_key)
+    return genai.Client(
+        api_key=api_key,
+        http_options=genai_types.HttpOptions(timeout=_REQUEST_TIMEOUT_MS),
+    )
 
 
 def _generate(client, prompt: str) -> str:
-    """Call Gemini and return the response text."""
-    resp = client.models.generate_content(
-        model=config.GEMINI_MODEL,
-        contents=prompt,
-    )
-    return resp.text or ""
+    """
+    Call Gemini and return the response text, retrying transient failures
+    (503/overloaded/timeouts) with simple backoff. Raises on the final failure
+    so callers can fall back to raw output.
+    """
+    last_err = None
+    for attempt in range(1, _MAX_RETRIES + 1):
+        try:
+            resp = client.models.generate_content(
+                model=config.GEMINI_MODEL,
+                contents=prompt,
+            )
+            return resp.text or ""
+        except Exception as e:  # noqa: BLE001 - we inspect the message below
+            last_err = e
+            msg = str(e).lower()
+            transient = any(
+                tok in msg
+                for tok in ("503", "unavailable", "high demand",
+                            "overloaded", "timeout", "deadline", "429")
+            )
+            if transient and attempt < _MAX_RETRIES:
+                wait = _RETRY_BACKOFF_SECONDS * attempt
+                print(f"  [llm] transient error (attempt {attempt}/{_MAX_RETRIES}), "
+                      f"retrying in {wait}s...")
+                time.sleep(wait)
+                continue
+            raise
+    raise last_err  # pragma: no cover
 
 
 def _extract_json(text: str):
