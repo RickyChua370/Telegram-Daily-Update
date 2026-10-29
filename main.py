@@ -78,55 +78,65 @@ def build_news_section(title: str, emoji: str, items: list) -> tuple:
     return ("\n".join(lines), new_items)
 
 
-def main() -> None:
+def _send_section(body: str) -> bool:
+    """Send one section as its own Telegram message. Returns True on success."""
     today = datetime.date.today().strftime("%A, %d %B %Y")
-    header = (f"🗞️ <b>Your Daily Update</b>\n"
-              f"{today} · {config.TIMEZONE_LABEL}\n"
+    header = (f"🗞️ <b>Your Daily Update</b> · {today}\n"
+              f"{config.TIMEZONE_LABEL}\n"
               f"{'─' * 20}\n")
+    try:
+        telegram_send.send_message(header + body.strip())
+        return True
+    except Exception:
+        print("[error] sending section failed:\n" + traceback.format_exc())
+        return False
 
-    sections = [header]
+
+def main() -> None:
+    # Each section is sent as its OWN Telegram message so jobs, Malaysian news,
+    # and Global AI are visually separate and easy to scroll. We only record an
+    # item as "seen" after its message was sent successfully.
     all_new_for_memory = []
 
-    # --- Jobs ---
+    # --- 1) Jobs ---
     try:
         jobs_text, new_jobs = build_jobs_section()
-        sections.append(jobs_text)
-        all_new_for_memory.append((new_jobs, _job_key))
     except Exception:
         print("[error] jobs section failed:\n" + traceback.format_exc())
-        sections.append("📋 <b>Graduate Programmes</b>\n(error fetching — see logs)\n")
+        jobs_text, new_jobs = (
+            "📋 <b>Graduate Programmes</b>\n(error fetching — see logs)\n", [])
+    if _send_section(jobs_text):
+        all_new_for_memory.append((new_jobs, _job_key))
 
-    # --- MY business/finance ---
+    # --- 2) Malaysia Business & Finance ---
     try:
         raw_my = news_fetch.fetch_my_business()
         summarised_my = llm_filter.summarise_news(raw_my, "Malaysian business & finance")
         my_text, new_my = build_news_section(
             "Malaysia Business & Finance", "💰", summarised_my)
-        sections.append(my_text)
-        all_new_for_memory.append((new_my, _news_key))
     except Exception:
         print("[error] MY news section failed:\n" + traceback.format_exc())
-        sections.append("💰 <b>Malaysia Business & Finance</b>\n(error fetching — see logs)\n")
+        my_text, new_my = (
+            "💰 <b>Malaysia Business & Finance</b>\n(error fetching — see logs)\n", [])
+    if _send_section(my_text):
+        all_new_for_memory.append((new_my, _news_key))
 
-    # --- Global AI ---
+    # --- 3) Global AI Watch ---
     try:
         raw_ai = news_fetch.fetch_global_ai()
         summarised_ai = llm_filter.summarise_news(raw_ai, "global AI")
         ai_text, new_ai = build_news_section(
             "Global AI Watch", "🤖", summarised_ai)
-        sections.append(ai_text)
-        all_new_for_memory.append((new_ai, _news_key))
     except Exception:
         print("[error] AI news section failed:\n" + traceback.format_exc())
-        sections.append("🤖 <b>Global AI Watch</b>\n(error fetching — see logs)\n")
+        ai_text, new_ai = (
+            "🤖 <b>Global AI Watch</b>\n(error fetching — see logs)\n", [])
+    if _send_section(ai_text):
+        all_new_for_memory.append((new_ai, _news_key))
 
-    digest = "\n".join(sections).strip()
+    print("[done] digest messages sent.")
 
-    # --- Send ---
-    telegram_send.send_message(digest)
-    print("[done] digest sent.")
-
-    # --- Remember what we sent (only after a successful send) ---
+    # --- Remember what we sent (only for sections that sent successfully) ---
     for items, key_fn in all_new_for_memory:
         if items:
             seen_store.mark_seen(items, key_fn)
