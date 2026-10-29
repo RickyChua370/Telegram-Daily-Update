@@ -37,6 +37,10 @@ def build_jobs_section() -> tuple:
     """Return (section_text, new_jobs_list)."""
     raw = jobs_search.gather_jobs()
     cleaned = llm_filter.filter_jobs(raw)
+    # Resolve Google News redirect links to real publisher URLs BEFORE the
+    # "seen" dedup, so dedup keys are the stable real URLs (and the links we
+    # show actually work). We only decode the filtered handful, so it's fast.
+    cleaned = jobs_search.resolve_job_links(cleaned)
     new_jobs = seen_store.filter_new(cleaned, _job_key)
 
     if not new_jobs:

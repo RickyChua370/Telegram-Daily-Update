@@ -18,7 +18,56 @@ import feedparser
 
 import config
 
+try:
+    from googlenewsdecoder import gnewsdecoder
+    _HAS_DECODER = True
+except ImportError:
+    _HAS_DECODER = False
+
 GOOGLE_CSE_ENDPOINT = "https://www.googleapis.com/customsearch/v1"
+
+
+def resolve_link(link: str) -> str:
+    """
+    Google News RSS links are encoded redirect URLs (news.google.com/rss/
+    articles/CBMi...) that sometimes show an "invalid web address" notice when
+    opened. Decode them to the real publisher URL.
+
+    - Non-Google-News links are returned unchanged.
+    - If decoding fails for any reason, we return the original link (so a job
+      is never dropped just because its link couldn't be resolved).
+    """
+    if not link or "news.google.com" not in link:
+        return link
+    if not _HAS_DECODER:
+        return link
+    try:
+        # interval adds a small delay between Google requests to avoid 429s.
+        res = gnewsdecoder(link, interval=1)
+        if res and res.get("decoded_url"):
+            return res["decoded_url"]
+    except Exception as e:  # noqa: BLE001
+        print(f"  [warn] link decode failed ({e}); keeping original link")
+    return link
+
+
+def resolve_job_links(jobs: list) -> list:
+    """
+    Resolve Google News redirect links to real URLs for a list of job dicts
+    (each having a 'link' key). Call this AFTER filtering so we only decode the
+    handful of jobs that will actually be shown — keeping it fast and avoiding
+    rate limits.
+    """
+    resolved = 0
+    for job in jobs:
+        original = job.get("link", "")
+        real = resolve_link(original)
+        if real != original:
+            job["link"] = real
+            resolved += 1
+    if jobs:
+        print(f"[jobs] resolved {resolved}/{len(jobs)} redirect link(s) to real URLs")
+    return jobs
 
 
 class SearchBudget:
