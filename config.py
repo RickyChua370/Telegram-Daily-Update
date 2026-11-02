@@ -145,3 +145,41 @@ GEMINI_MODEL_FALLBACKS = [
 # Timezone label (purely cosmetic, shown in the digest header)
 # ---------------------------------------------------------------------------
 TIMEZONE_LABEL = "Malaysia Time (MYT)"
+
+# ---------------------------------------------------------------------------
+# YOUTUBE CREATOR TRACKING (content-idea engine)
+# ---------------------------------------------------------------------------
+# Tracks new uploads from specific channels so you can brainstorm similar
+# content. For NON-Malaysian creators, the bot also suggests a Malaysian-context
+# adaptation (e.g. "Documentary on an Australian dairy farm" -> "Do one on
+# Farm Fresh in Malaysia") to spark a 1-minute short/reel idea.
+#
+# Primary fetch uses the YouTube Data API (set YOUTUBE_API_KEY). If no key is
+# set, the bot falls back to each channel's free public RSS feed (no key).
+#
+# Each entry: handle (for display), channel_id, and whether it's Malaysian.
+# "malaysian": True  -> report the video as-is (already local context)
+# "malaysian": False -> also generate a Malaysian-adaptation content idea
+YOUTUBE_CHANNELS = [
+    {"handle": "publicopinionnyc",  "channel_id": "UCGwyQM5eQOTxoeHOZaMwzSg", "malaysian": False},
+    {"handle": "goodyfeedbluecats", "channel_id": "UCt-9qlL7q9JPpPi1uOintfw", "malaysian": False},
+    {"handle": "Moon-Real",         "channel_id": "UCB6P-Iahz6E0qnUdoURNotQ", "malaysian": False},
+    {"handle": "MalaysianPAYGAP",   "channel_id": "UCrhIk2faO1fWjJzEMvkFnww", "malaysian": True},
+    {"handle": "BBKNetwork",        "channel_id": "UC0SJCeL0QG4BH_KQALjQE-Q", "malaysian": False},
+    {"handle": "ZietInvests",       "channel_id": "UC-h5sZ-O_4KbdzPy6hxYd9g", "malaysian": False},
+    {"handle": "ceocircleclub00",   "channel_id": "UCWgyEfQYKYOxVPr8NOJAsXw", "malaysian": False},
+    {"handle": "FinancialFaiz",     "channel_id": "UCSYUI0C0gG-Kp03GBaO2G9Q", "malaysian": True},
+    {"handle": "CNAInsider",        "channel_id": "UC_Lnb8ZHqqgLbp-7hltuT9w", "malaysian": False},
+    {"handle": "LiveActionFilms",   "channel_id": "UCvC6KqMFj7ifnd-JH7hYtQA", "malaysian": False},
+    {"handle": "GrantRudow",        "channel_id": "UCdHqdfzdvT7tbAfeQM1gLnQ", "malaysian": False},
+    {"handle": "companyman114",     "channel_id": "UCQMyhrt92_8XM0KgZH6VnRg", "malaysian": False},
+    {"handle": "CNBC",              "channel_id": "UCH5_L3ytGbBziX0CLuYdQ1Q", "malaysian": False},
+    {"handle": "MrMoneyTV",         "channel_id": "UCTj6bkOhFCeGY_c9MSi5ORw", "malaysian": True},
+]
+
+# Only report uploads newer than this many days (the "seen" memory also
+# prevents repeats, but this avoids surfacing stale videos on first run).
+YOUTUBE_LOOKBACK_DAYS = 3
+
+# Max videos to show per channel per run (keeps the digest tidy).
+YOUTUBE_MAX_PER_CHANNEL = 3

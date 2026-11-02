@@ -247,3 +247,80 @@ Headlines:
         print(f"[llm] news summarise failed ({e}); falling back to raw.")
 
     return [{"headline": it["title"], "summary": "", "link": it["link"]} for it in items]
+
+
+# ---------------------------------------------------------------------------
+# YouTube content-idea engine
+# ---------------------------------------------------------------------------
+def enrich_youtube(videos: list) -> list:
+    """
+    For each tracked video, add a short 'idea' field:
+      - Non-Malaysian videos  -> a Malaysian-context adaptation idea for a
+        ~1-minute short/reel (e.g. "AU dairy farm doc" -> "do one on Farm Fresh").
+      - Malaysian videos       -> a brief angle/hook to riff on locally.
+
+    Input items have keys: handle, malaysian, title, link, published.
+    Returns the same list with an added 'idea' (str, may be "" on failure).
+    Falls back gracefully (idea="") if the LLM is unavailable.
+    """
+    if not videos:
+        return []
+
+    client = _get_client()
+    if client is None:
+        print("[llm] Gemini not configured; YouTube videos sent without ideas.")
+        for v in videos:
+            v["idea"] = ""
+        return videos
+
+    compact = [
+        {
+            "i": idx,
+            "title": v["title"],
+            "malaysian": bool(v.get("malaysian")),
+        }
+        for idx, v in enumerate(videos)
+    ]
+
+    prompt = f"""You help a Malaysian content creator brainstorm short-form video
+ideas (1-minute reels/shorts). Below is a list of recently uploaded YouTube videos
+they track.
+
+For EACH item, write ONE concrete, punchy content idea the creator could film,
+tailored to a MALAYSIAN audience:
+- If "malaysian" is false (foreign video): adapt the concept to a Malaysian
+  equivalent. Example: a documentary about an Australian dairy farm ->
+  "Mini-doc on Farm Fresh's dairy farms in Malaysia". Name a specific Malaysian
+  company/place/person where it makes sense.
+- If "malaysian" is true: suggest a fresh angle or hook to make a similar local
+  short stand out.
+Keep each idea to one sentence, specific and actionable (not generic).
+
+Return ONLY a JSON array (no prose, no code fences) of objects:
+  "i"    : the item's index (integer, unchanged)
+  "idea" : your one-sentence Malaysian content idea (string)
+
+Videos:
+{json.dumps(compact, ensure_ascii=False)}
+"""
+
+    try:
+        parsed = _extract_json(_generate(client, prompt))
+        ideas = {}
+        if isinstance(parsed, list):
+            for item in parsed:
+                if isinstance(item, dict) and "i" in item:
+                    try:
+                        ideas[int(item["i"])] = str(item.get("idea", "")).strip()
+                    except (ValueError, TypeError):
+                        continue
+        for idx, v in enumerate(videos):
+            v["idea"] = ideas.get(idx, "")
+        n = sum(1 for v in videos if v.get("idea"))
+        print(f"[llm] generated {n}/{len(videos)} YouTube content idea(s)")
+        return videos
+    except Exception as e:  # noqa: BLE001
+        print(f"[llm] YouTube idea generation failed ({e}); sending without ideas.")
+        for v in videos:
+            v["idea"] = ""
+        return videos

@@ -20,7 +20,8 @@ import traceback
 from dotenv import load_dotenv
 
 import config
-from src import jobs_search, news_fetch, llm_filter, seen_store, telegram_send
+from src import (jobs_search, news_fetch, llm_filter, seen_store,
+                telegram_send, youtube_fetch)
 
 load_dotenv()  # load .env for local runs; harmless in GitHub Actions
 
@@ -31,6 +32,10 @@ def _job_key(job: dict) -> str:
 
 def _news_key(item: dict) -> str:
     return item.get("link", "")
+
+
+def _video_key(v: dict) -> str:
+    return v.get("link", "")
 
 
 def build_jobs_section() -> tuple:
@@ -76,6 +81,31 @@ def build_news_section(title: str, emoji: str, items: list) -> tuple:
             lines.append(f"  {summary}")
     lines.append("")
     return ("\n".join(lines), new_items)
+
+
+def build_youtube_section() -> tuple:
+    """
+    New uploads from tracked creators, each with a Malaysian content-idea.
+    Returns (section_text, new_videos_list).
+    """
+    raw = youtube_fetch.fetch_recent_uploads()
+    new_videos = seen_store.filter_new(raw, _video_key)
+    if not new_videos:
+        return ("📺 <b>Creator Watch — Content Ideas</b>\n"
+                "No new uploads from your tracked channels today.\n", [])
+
+    enriched = llm_filter.enrich_youtube(new_videos)
+
+    lines = ["📺 <b>Creator Watch — Content Ideas</b>"]
+    for v in enriched:
+        handle = telegram_send.escape("@" + v["handle"])
+        title = telegram_send.escape(v["title"])
+        idea = telegram_send.escape(v.get("idea", ""))
+        lines.append(f"• <b>{handle}</b>: <a href=\"{v['link']}\">{title}</a>")
+        if idea:
+            lines.append(f"  💡 <i>{idea}</i>")
+    lines.append("")
+    return ("\n".join(lines), enriched)
 
 
 def _send_section(body: str) -> bool:
@@ -133,6 +163,16 @@ def main() -> None:
             "🤖 <b>Global AI Watch</b>\n(error fetching — see logs)\n", [])
     if _send_section(ai_text):
         all_new_for_memory.append((new_ai, _news_key))
+
+    # --- 4) Creator Watch (YouTube content ideas) ---
+    try:
+        yt_text, new_videos = build_youtube_section()
+    except Exception:
+        print("[error] YouTube section failed:\n" + traceback.format_exc())
+        yt_text, new_videos = (
+            "📺 <b>Creator Watch — Content Ideas</b>\n(error fetching — see logs)\n", [])
+    if _send_section(yt_text):
+        all_new_for_memory.append((new_videos, _video_key))
 
     print("[done] digest messages sent.")
 
