@@ -324,3 +324,65 @@ Videos:
         for v in videos:
             v["idea"] = ""
         return videos
+
+
+# ---------------------------------------------------------------------------
+# Malaysia Business Story of the Day
+# ---------------------------------------------------------------------------
+def business_story(candidates: list) -> dict:
+    """
+    Pick/compose one engaging Malaysian company story for the day.
+
+    Input: list of recent business-news items ({'title','link',...}).
+    Returns: {"company": str, "headline": str, "story": str, "link": str}
+    or {} if the LLM is unavailable.
+
+    The story covers an interesting angle (how they grew / entered the market /
+    collapsed / pivoted) in a few plain-English sentences.
+    """
+    client = _get_client()
+    if client is None:
+        print("[llm] Gemini not configured; skipping business story.")
+        return {}
+
+    compact = [{"title": c.get("title", ""), "link": c.get("link", "")}
+               for c in (candidates or [])[:25]]
+
+    prompt = f"""You are writing a short, engaging "Malaysian Business Story of the
+Day" for a curious general reader.
+
+Pick ONE Malaysian company that is interesting today — ideally inspired by the
+recent headlines below, but you may choose a well-known Malaysian company from
+your own knowledge if the headlines are dull. Tell its story with a clear angle:
+how it grew, how it entered/disrupted the market, how it pivoted, or how it
+struggled/collapsed. Make it punchy and genuinely interesting, not a dry summary.
+
+Rules:
+- 3 to 5 sentences, plain English, no jargon.
+- Focus on ONE company and a clear narrative hook.
+- Be accurate; do not invent fake statistics. Keep claims general if unsure.
+
+Return ONLY a JSON object (no prose, no code fences) with keys:
+  "company"  : the company's common name (string, e.g. "AirAsia", "Farm Fresh")
+  "headline" : a catchy one-line title for the story (string)
+  "story"    : the 3-5 sentence story (string)
+  "link"     : the most relevant source URL from the headlines, or "" (string)
+
+Recent headlines:
+{json.dumps(compact, ensure_ascii=False)}
+"""
+
+    try:
+        parsed = _extract_json(_generate(client, prompt))
+        if isinstance(parsed, dict) and parsed.get("story"):
+            result = {
+                "company": str(parsed.get("company", "")).strip(),
+                "headline": str(parsed.get("headline", "")).strip(),
+                "story": str(parsed.get("story", "")).strip(),
+                "link": str(parsed.get("link", "")).strip(),
+            }
+            print(f"[llm] business story: {result['company'] or '(unknown)'}")
+            return result
+    except Exception as e:  # noqa: BLE001
+        print(f"[llm] business story failed ({e}).")
+    return {}

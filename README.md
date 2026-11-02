@@ -21,7 +21,10 @@ GitHub Actions (daily, 8 AM MYT)
         │
         ▼
      main.py
-        ├── jobs_search.py   → free Google-News RSS job feeds (+ optional Google API)
+        ├── jobs_search.py     → free Google-News RSS job feeds (+ optional Google API)
+        ├── youtube_fetch.py   → tracked creators' new uploads (Creator Watch)
+        ├── stocks.py          → Bursa stock data via Yahoo Finance (not advice)
+        ├── trending_fetch.py  → Google Trends MY + Reddit r/malaysia hot
         ├── news_fetch.py    → The Edge + global AI via RSS
         ├── llm_filter.py    → Gemini (free): filter jobs + layman summaries
         ├── seen_store.py    → remembers past items so you only get NEW ones

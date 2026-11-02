@@ -183,3 +183,73 @@ YOUTUBE_LOOKBACK_DAYS = 3
 
 # Max videos to show per channel per run (keeps the digest tidy).
 YOUTUBE_MAX_PER_CHANNEL = 3
+
+
+# ---------------------------------------------------------------------------
+# #1 MALAYSIA BUSINESS STORY OF THE DAY
+# ---------------------------------------------------------------------------
+# A daily deep-dive on a Malaysian company: how it grew / entered the market /
+# collapsed, etc. Gemini picks a company from recent business news (or its own
+# knowledge on quiet days) and tells a short, engaging story.
+#
+# If the company is listed on Bursa Malaysia, we attach live stock data from
+# Yahoo Finance (clearly labelled NOT financial advice). We also attach a few
+# Reddit discussion links about the company (via Google News site:reddit.com).
+
+# News feeds used to pick the day's company story.
+BUSINESS_STORY_FEEDS = [
+    "https://news.google.com/rss/search?q=when:3d%20Malaysia%20company%20business%20growth%20OR%20expansion&hl=en-MY&gl=MY&ceid=MY:en",
+    "https://news.google.com/rss/search?q=when:3d%20Malaysia%20company%20acquisition%20OR%20IPO%20OR%20restructuring&hl=en-MY&gl=MY&ceid=MY:en",
+]
+
+# A small map of well-known Malaysian companies -> Bursa Malaysia ticker
+# (Yahoo Finance uses the ".KL" suffix). Used to attach stock data when the
+# day's story company is listed. Gemini is also asked for a ticker guess, but
+# this map makes the common ones reliable.
+BURSA_TICKERS = {
+    "maybank": "1155.KL",
+    "cimb": "1023.KL",
+    "public bank": "1295.KL",
+    "rhb": "1066.KL",
+    "petronas chemicals": "5183.KL",
+    "petronas gas": "6033.KL",
+    "tenaga": "5347.KL",
+    "tnb": "5347.KL",
+    "axiata": "6888.KL",
+    "maxis": "6012.KL",
+    "celcomdigi": "6947.KL",
+    "digi": "6947.KL",
+    "sime darby": "4197.KL",
+    "ioi": "1961.KL",
+    "top glove": "7113.KL",
+    "hartalega": "5168.KL",
+    "airasia": "5099.KL",
+    "capital a": "5099.KL",
+    "genting": "3182.KL",
+    "genting malaysia": "4715.KL",
+    "mr diy": "5296.KL",
+    "ql resources": "7084.KL",
+    "nestle malaysia": "4707.KL",
+    "ppb": "4065.KL",
+    "ihh": "5225.KL",
+    "press metal": "8869.KL",
+    "gamuda": "5398.KL",
+    "ytl": "4677.KL",
+    "ytl power": "6742.KL",
+    "bursa malaysia": "1818.KL",
+    "farm fresh": "5306.KL",
+    "99 speedmart": "5326.KL",
+}
+
+# How many Reddit discussion links to attach to the business story.
+BUSINESS_STORY_REDDIT_LINKS = 3
+
+# ---------------------------------------------------------------------------
+# #3 TRENDING PULSE (Google Trends MY + Reddit r/malaysia)
+# ---------------------------------------------------------------------------
+# NOTE: Reddit blocks anonymous search/JSON, but its public "hot" RSS works.
+GOOGLE_TRENDS_MY_RSS = "https://trends.google.com/trending/rss?geo=MY"
+REDDIT_MALAYSIA_HOT_RSS = "https://www.reddit.com/r/malaysia/hot/.rss?limit=15"
+
+TRENDING_MAX_GOOGLE = 8   # top N Google Trends searches to show
+TRENDING_MAX_REDDIT = 6   # top N r/malaysia hot posts to show

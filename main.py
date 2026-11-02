@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 
 import config
 from src import (jobs_search, news_fetch, llm_filter, seen_store,
-                telegram_send, youtube_fetch)
+                telegram_send, youtube_fetch, stocks, trending_fetch)
 
 load_dotenv()  # load .env for local runs; harmless in GitHub Actions
 
@@ -108,6 +108,61 @@ def build_youtube_section() -> tuple:
     return ("\n".join(lines), enriched)
 
 
+def build_business_story_section() -> str:
+    """Daily Malaysian company story + (if listed) stock data + Reddit chatter."""
+    candidates = news_fetch.fetch_business_story_candidates()
+    story = llm_filter.business_story(candidates)
+    if not story or not story.get("story"):
+        return ("📖 <b>Malaysia Business Story of the Day</b>\n"
+                "No story today (couldn't generate one).\n")
+
+    company = story["company"]
+    headline = telegram_send.escape(story["headline"] or company or "Business Story")
+    body = telegram_send.escape(story["story"])
+
+    lines = ["📖 <b>Malaysia Business Story of the Day</b>", f"<b>{headline}</b>", body]
+
+    # Stock data (listed companies only) — explicitly not financial advice.
+    stock_line = stocks.format_quote(company)
+    if stock_line:
+        lines.append(f"📈 {telegram_send.escape(stock_line)}")
+        lines.append("<i>Market data for info only — not financial advice.</i>")
+
+    # Reddit discussion links about the company.
+    reddit = news_fetch.fetch_reddit_links(company, config.BUSINESS_STORY_REDDIT_LINKS)
+    if reddit:
+        lines.append("💬 <b>What people are saying:</b>")
+        for r in reddit:
+            lines.append(f"• <a href=\"{r['link']}\">{telegram_send.escape(r['title'])}</a>")
+
+    if story.get("link"):
+        lines.append(f"🔗 <a href=\"{story['link']}\">Source</a>")
+
+    lines.append("")
+    return "\n".join(lines)
+
+
+def build_trending_section() -> str:
+    """Trending pulse: Google Trends (MY) + Reddit r/malaysia hot posts."""
+    gtrends = trending_fetch.fetch_google_trends()
+    reddit = trending_fetch.fetch_reddit_hot()
+
+    if not gtrends and not reddit:
+        return ("🔥 <b>Trending in Malaysia</b>\nNothing to show today.\n")
+
+    lines = ["🔥 <b>Trending in Malaysia</b>"]
+    if gtrends:
+        lines.append("🔎 <b>Google searches spiking:</b>")
+        terms = ", ".join(telegram_send.escape(t["term"]) for t in gtrends)
+        lines.append(terms)
+    if reddit:
+        lines.append("👥 <b>Hot on r/malaysia:</b>")
+        for p in reddit:
+            lines.append(f"• <a href=\"{p['link']}\">{telegram_send.escape(p['title'])}</a>")
+    lines.append("")
+    return "\n".join(lines)
+
+
 def _send_section(body: str) -> bool:
     """Send one section as its own Telegram message. Returns True on success."""
     today = datetime.date.today().strftime("%A, %d %B %Y")
@@ -164,7 +219,24 @@ def main() -> None:
     if _send_section(ai_text):
         all_new_for_memory.append((new_ai, _news_key))
 
-    # --- 4) Creator Watch (YouTube content ideas) ---
+    # --- 4) Malaysia Business Story of the Day ---
+    try:
+        story_text = build_business_story_section()
+    except Exception:
+        print("[error] business story section failed:\n" + traceback.format_exc())
+        story_text = ("📖 <b>Malaysia Business Story of the Day</b>\n"
+                      "(error fetching — see logs)\n")
+    _send_section(story_text)
+
+    # --- 5) Trending in Malaysia ---
+    try:
+        trending_text = build_trending_section()
+    except Exception:
+        print("[error] trending section failed:\n" + traceback.format_exc())
+        trending_text = "🔥 <b>Trending in Malaysia</b>\n(error fetching — see logs)\n"
+    _send_section(trending_text)
+
+    # --- 6) Creator Watch (YouTube content ideas) ---
     try:
         yt_text, new_videos = build_youtube_section()
     except Exception:

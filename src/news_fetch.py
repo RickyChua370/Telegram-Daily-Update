@@ -64,3 +64,29 @@ def fetch_global_ai() -> list:
     items = _fetch_many(config.GLOBAL_AI_FEEDS)
     print(f"[news] global AI: {len(items)} raw items")
     return items
+
+
+def fetch_business_story_candidates() -> list:
+    """Recent Malaysian company/business news items to seed the daily story."""
+    items = _fetch_many(config.BUSINESS_STORY_FEEDS)
+    print(f"[story] business-story candidates: {len(items)} item(s)")
+    return items
+
+
+def fetch_reddit_links(company: str, limit: int = 3) -> list:
+    """
+    Find Reddit discussion threads about a company via Google News site:
+    scoping (Reddit blocks anonymous search directly, but this works).
+    Returns [{'title':..., 'link':...}].
+    """
+    import urllib.parse
+    if not company:
+        return []
+    query = f"site:reddit.com {company} Malaysia"
+    url = ("https://news.google.com/rss/search?q="
+           + urllib.parse.quote(query)
+           + "&hl=en-MY&gl=MY&ceid=MY:en")
+    out = []
+    for item in _fetch_feed(url)[:limit]:
+        out.append({"title": item["title"], "link": item["link"]})
+    return out
