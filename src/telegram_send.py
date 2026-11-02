@@ -26,6 +26,16 @@ def _get_credentials():
     return token, chat_id
 
 
+def _recipient_ids() -> list:
+    """
+    TELEGRAM_CHAT_ID may be a single id or a comma-separated list, so the same
+    bot can deliver to several people (e.g. you + a friend). Whitespace and
+    empty entries are ignored.
+    """
+    _, raw = _get_credentials()
+    return [cid.strip() for cid in raw.split(",") if cid.strip()]
+
+
 def escape(text: str) -> str:
     """Escape text for Telegram HTML parse mode."""
     return html.escape(text or "")
@@ -52,24 +62,47 @@ def _split_into_chunks(text: str) -> list:
 
 
 def send_message(text: str) -> None:
-    """Send one logical message, splitting into multiple if needed."""
-    token, chat_id = _get_credentials()
+    """
+    Send one logical message to EVERY configured recipient, splitting into
+    multiple chunks if needed.
+
+    Delivery to each recipient is independent: if sending to one person fails
+    (e.g. they haven't started the bot yet), we log it and still deliver to the
+    others. Raises only if delivery failed for ALL recipients.
+    """
+    token = os.environ.get("TELEGRAM_BOT_TOKEN")
+    if not token:
+        raise RuntimeError("Missing TELEGRAM_BOT_TOKEN.")
     url = TELEGRAM_API.format(token=token)
 
-    for chunk in _split_into_chunks(text):
-        resp = requests.post(
-            url,
-            data={
-                "chat_id": chat_id,
-                "text": chunk,
-                "parse_mode": "HTML",
-                "disable_web_page_preview": "true",
-            },
-            timeout=30,
+    recipients = _recipient_ids()
+    chunks = _split_into_chunks(text)
+    any_success = False
+    errors = []
+
+    for chat_id in recipients:
+        try:
+            for chunk in chunks:
+                resp = requests.post(
+                    url,
+                    data={
+                        "chat_id": chat_id,
+                        "text": chunk,
+                        "parse_mode": "HTML",
+                        "disable_web_page_preview": "true",
+                    },
+                    timeout=30,
+                )
+                if not resp.ok:
+                    raise RuntimeError(f"{resp.status_code}: {resp.text}")
+                time.sleep(0.4)  # gentle with rate limits
+            any_success = True
+        except Exception as e:  # noqa: BLE001
+            # Don't let one bad recipient block the rest.
+            print(f"  [warn] Telegram send to {chat_id} failed: {e}")
+            errors.append((chat_id, str(e)))
+
+    if not any_success:
+        raise RuntimeError(
+            f"Telegram send failed for all recipients: {errors}"
         )
-        if not resp.ok:
-            raise RuntimeError(
-                f"Telegram send failed ({resp.status_code}): {resp.text}"
-            )
-        # Be gentle with rate limits when sending several chunks.
-        time.sleep(0.4)
