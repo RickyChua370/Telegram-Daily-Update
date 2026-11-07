@@ -80,6 +80,7 @@ def _fetch_channel_api(channel, api_key: str) -> list:
         items.append({
             "handle": channel["handle"],
             "malaysian": channel["malaysian"],
+            "category": channel.get("category", "general"),
             "title": title,
             "link": f"https://www.youtube.com/watch?v={vid}",
             "published": published,
@@ -111,6 +112,7 @@ def _fetch_channel_rss(channel) -> list:
         items.append({
             "handle": channel["handle"],
             "malaysian": channel["malaysian"],
+            "category": channel.get("category", "general"),
             "title": title,
             "link": link,
             "published": published,

@@ -278,6 +278,7 @@ def enrich_youtube(videos: list) -> list:
             "i": idx,
             "title": v["title"],
             "malaysian": bool(v.get("malaysian")),
+            "category": v.get("category", "general"),
         }
         for idx, v in enumerate(videos)
     ]
@@ -286,19 +287,26 @@ def enrich_youtube(videos: list) -> list:
 ideas (1-minute reels/shorts). Below is a list of recently uploaded YouTube videos
 they track.
 
-For EACH item, write ONE concrete, punchy content idea the creator could film,
-tailored to a MALAYSIAN audience:
-- If "malaysian" is false (foreign video): adapt the concept to a Malaysian
-  equivalent. Example: a documentary about an Australian dairy farm ->
-  "Mini-doc on Farm Fresh's dairy farms in Malaysia". Name a specific Malaysian
-  company/place/person where it makes sense.
-- If "malaysian" is true: suggest a fresh angle or hook to make a similar local
-  short stand out.
-Keep each idea to one sentence, specific and actionable (not generic).
+For EACH item, write ONE concrete, punchy content idea the creator could film.
+Use the item's "category" to decide the angle:
+
+- category "general": tailor to a MALAYSIAN audience. If "malaysian" is false,
+  adapt the foreign concept to a Malaysian equivalent (e.g. a doc about an
+  Australian dairy farm -> "Mini-doc on Farm Fresh's dairy farms in Malaysia";
+  name a specific Malaysian company/place/person where it fits). If "malaysian"
+  is true, suggest a fresh angle to make a similar local short stand out.
+
+- category "selfgrowth": tailor the idea for a MALAYSIAN FEMALE FRESH GRADUATE
+  making self-growth content. Make it personal, relatable and authentic to her
+  life stage — e.g. starting a first job, imposter syndrome, budgeting a first
+  salary, building confidence, routines, dealing with family/societal
+  expectations in Malaysia. Keep it doable on a phone, no fancy production.
+
+Keep each idea to ONE sentence, specific and actionable (not generic).
 
 Return ONLY a JSON array (no prose, no code fences) of objects:
   "i"    : the item's index (integer, unchanged)
-  "idea" : your one-sentence Malaysian content idea (string)
+  "idea" : your one-sentence content idea (string)
 
 Videos:
 {json.dumps(compact, ensure_ascii=False)}

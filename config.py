@@ -157,24 +157,35 @@ TIMEZONE_LABEL = "Malaysia Time (MYT)"
 # Primary fetch uses the YouTube Data API (set YOUTUBE_API_KEY). If no key is
 # set, the bot falls back to each channel's free public RSS feed (no key).
 #
-# Each entry: handle (for display), channel_id, and whether it's Malaysian.
-# "malaysian": True  -> report the video as-is (already local context)
-# "malaysian": False -> also generate a Malaysian-adaptation content idea
+# Each entry: handle (for display), channel_id, whether it's Malaysian, and a
+# "category" that steers the kind of content idea Gemini suggests:
+#   "general"    -> general Malaysian-context short/reel adaptation
+#   "selfgrowth" -> ideas for a Malaysian FEMALE FRESH GRADUATE doing
+#                   self-growth content
+# "malaysian": True  -> treat as already-local context
+# "malaysian": False -> adapt the idea to a Malaysian context
 YOUTUBE_CHANNELS = [
-    {"handle": "publicopinionnyc",  "channel_id": "UCGwyQM5eQOTxoeHOZaMwzSg", "malaysian": False},
-    {"handle": "goodyfeedbluecats", "channel_id": "UCt-9qlL7q9JPpPi1uOintfw", "malaysian": False},
-    {"handle": "Moon-Real",         "channel_id": "UCB6P-Iahz6E0qnUdoURNotQ", "malaysian": False},
-    {"handle": "MalaysianPAYGAP",   "channel_id": "UCrhIk2faO1fWjJzEMvkFnww", "malaysian": True},
-    {"handle": "BBKNetwork",        "channel_id": "UC0SJCeL0QG4BH_KQALjQE-Q", "malaysian": False},
-    {"handle": "ZietInvests",       "channel_id": "UC-h5sZ-O_4KbdzPy6hxYd9g", "malaysian": False},
-    {"handle": "ceocircleclub00",   "channel_id": "UCWgyEfQYKYOxVPr8NOJAsXw", "malaysian": False},
-    {"handle": "FinancialFaiz",     "channel_id": "UCSYUI0C0gG-Kp03GBaO2G9Q", "malaysian": True},
-    {"handle": "CNAInsider",        "channel_id": "UC_Lnb8ZHqqgLbp-7hltuT9w", "malaysian": False},
-    {"handle": "LiveActionFilms",   "channel_id": "UCvC6KqMFj7ifnd-JH7hYtQA", "malaysian": False},
-    {"handle": "GrantRudow",        "channel_id": "UCdHqdfzdvT7tbAfeQM1gLnQ", "malaysian": False},
-    {"handle": "companyman114",     "channel_id": "UCQMyhrt92_8XM0KgZH6VnRg", "malaysian": False},
-    {"handle": "CNBC",              "channel_id": "UCH5_L3ytGbBziX0CLuYdQ1Q", "malaysian": False},
-    {"handle": "MrMoneyTV",         "channel_id": "UCTj6bkOhFCeGY_c9MSi5ORw", "malaysian": True},
+    {"handle": "publicopinionnyc",  "channel_id": "UCGwyQM5eQOTxoeHOZaMwzSg", "malaysian": False, "category": "general"},
+    {"handle": "goodyfeedbluecats", "channel_id": "UCt-9qlL7q9JPpPi1uOintfw", "malaysian": False, "category": "general"},
+    {"handle": "Moon-Real",         "channel_id": "UCB6P-Iahz6E0qnUdoURNotQ", "malaysian": False, "category": "general"},
+    {"handle": "MalaysianPAYGAP",   "channel_id": "UCrhIk2faO1fWjJzEMvkFnww", "malaysian": True,  "category": "general"},
+    {"handle": "BBKNetwork",        "channel_id": "UC0SJCeL0QG4BH_KQALjQE-Q", "malaysian": False, "category": "general"},
+    {"handle": "ZietInvests",       "channel_id": "UC-h5sZ-O_4KbdzPy6hxYd9g", "malaysian": False, "category": "general"},
+    {"handle": "ceocircleclub00",   "channel_id": "UCWgyEfQYKYOxVPr8NOJAsXw", "malaysian": False, "category": "general"},
+    {"handle": "FinancialFaiz",     "channel_id": "UCSYUI0C0gG-Kp03GBaO2G9Q", "malaysian": True,  "category": "general"},
+    {"handle": "CNAInsider",        "channel_id": "UC_Lnb8ZHqqgLbp-7hltuT9w", "malaysian": False, "category": "general"},
+    {"handle": "LiveActionFilms",   "channel_id": "UCvC6KqMFj7ifnd-JH7hYtQA", "malaysian": False, "category": "general"},
+    {"handle": "GrantRudow",        "channel_id": "UCdHqdfzdvT7tbAfeQM1gLnQ", "malaysian": False, "category": "general"},
+    {"handle": "companyman114",     "channel_id": "UCQMyhrt92_8XM0KgZH6VnRg", "malaysian": False, "category": "general"},
+    {"handle": "CNBC",              "channel_id": "UCH5_L3ytGbBziX0CLuYdQ1Q", "malaysian": False, "category": "general"},
+    {"handle": "MrMoneyTV",         "channel_id": "UCTj6bkOhFCeGY_c9MSi5ORw", "malaysian": True,  "category": "general"},
+
+    # --- Self-growth creators (ideas tailored for a MY female fresh graduate) ---
+    {"handle": "tamkaur",           "channel_id": "UCQaDvRvrLPPROGSV8Y7XowA", "malaysian": False, "category": "selfgrowth"},
+    {"handle": "JillzGuerin",       "channel_id": "UCzR9e4gHwY1kOM0nFMcWe0A", "malaysian": False, "category": "selfgrowth"},
+    {"handle": "Sisyphus55",        "channel_id": "UCKPZHZzvSPYvqyk-nFS9kDA", "malaysian": False, "category": "selfgrowth"},
+    {"handle": "charlottemorabito", "channel_id": "UCy2xYfqVOaMEx3mMGiJrWmg", "malaysian": False, "category": "selfgrowth"},
+    {"handle": "nadeenhui",         "channel_id": "UC1tCLwbySvJO7lkSgJAtzsQ", "malaysian": False, "category": "selfgrowth"},
 ]
 
 # Only report uploads newer than this many days (the "seen" memory also
